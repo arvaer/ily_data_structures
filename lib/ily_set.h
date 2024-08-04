@@ -14,65 +14,87 @@
 #ifndef ILY_SET_INSERT
 #include <openssl/evp.h>
 #include <string.h>
+unsigned char* encode_string (unsigned char* str);
 #define ILY_SET_INSERT
 #endif // ILY_SET_INSERT
 
 
-typedef struct node {
+typedef struct Node {
     unsigned char* data;
-    struct node* parent; 
-    struct node* left;   // CAR
-    struct node* right; // CDR
-} node;
+    struct Node* parent; 
+    struct Node* left;   // CAR
+    struct Node* right; // CDR
+} Node;
 
 
 typedef struct Set{
-    void* items;
-    size_t size;
+    Node** items;
+    Node* root;
     size_t capacity;
+    size_t size;
 } Set;
 
 
 // Set API 
 int initialize_set(Set* set);
 int free_set(Set* set);
+int insert(Set* set, const char* item);
 
 // Node / Tree Traversal
-node* subtree_first(node* root);
-node* successor(node* root);
-node* predecessor(node* root);
+Node* subtree_first(Node* root);
+Node* successor(Node* root);
+Node* predecessor(Node* root);
 
-node* subtree_insert_before(node* a, node* b);
-node* subtree_insert_after(node*a, node*b);
-int subtree_insert(node* a, node* b);
-node* subtree_find(node* a, unsigned char* b);
-node* subtree_find_next(node* a, node* b);
-node* subtree_find_prev(node* a, node* b);
+Node* subtree_insert(Node* a, Node* b);
+Node* subtree_insert_before(Node* a, Node* b);
+Node* subtree_insert_after(Node*a, Node*b);
+Node* subtree_find(Node* a, unsigned char* b);
+Node* subtree_find_next(Node* a, unsigned char* b);
+Node* subtree_find_prev(Node* a, unsigned char* b);
 
 #endif // ILY_SET_H
 #ifndef ILY_SET_IMPLEMENTATION
 
 
-
-
-
 // Set backed by BST ops
 int initialize_set(Set* set) {
-    
+    set->items = NULL;
+    set->size = 0;
+    set->capacity = 0;
+    return 1;
+}
+
+int insert(Set* set, const char* item){
+    unsigned char* u_item = (unsigned char*) item; //static cast
+    unsigned char* encoded_string = encode_string(u_item);
+
+    Node* node = (Node*)malloc(sizeof(Node));
+    node->data = encoded_string;
+   
+    if(set->size >= set->capacity) {
+        if(set->capacity == 0) {
+           set->root = node;
+           set->capacity = 5;
+        } else {
+            set->capacity = set->size * 2;
+        }
+        
+        Node** new_items = (Node**)realloc(set->items, set->capacity * sizeof(Node*));
+        if (!new_items) {
+            return 0;
+        } 
+        set->items = new_items;
+    }
+    subtree_insert(set->root, node);
+    set->items[set->size++] = node;
+    return 1;
 }
 
 
 
-
-
-
-
-
-
-
 // Node Traversal Ops
-node* subtree_first(node* root){
-    node* prev_node = NULL;
+Node* subtree_first(Node* root){
+    Node* prev_node = NULL;
     if(!root->left){
         return root;
     }
@@ -85,8 +107,8 @@ node* subtree_first(node* root){
     return prev_node;
 }
 
-node* subtree_last(node* root){
-    node* prev_node = NULL;
+Node* subtree_last(Node* root){
+    Node* prev_node = NULL;
     if(!root->right){
         return root;
     }
@@ -100,7 +122,7 @@ node* subtree_last(node* root){
 }
 
 
-node* successor(node* root){
+Node* successor(Node* root){
     if(root->right){
         return subtree_first(root->right);
     }
@@ -113,7 +135,7 @@ node* successor(node* root){
     return root;
 };
 
-node* predecessor(node* root){
+Node* predecessor(Node* root){
     if(root->left){
         return root->left;
     }
@@ -127,7 +149,32 @@ node* predecessor(node* root){
 };
 
 
-node* subtree_insert_before(node* a, node* b){    
+Node* subtree_insert(Node* a, Node* b){
+   if ((a == NULL || b == NULL) && (a->data == b->data)) {
+       return NULL;
+   }
+    if(b->data < a->data){
+        if(a->left){
+            subtree_insert(a->left, b);
+        } else {
+            subtree_insert_before(a,b);
+        }
+    }
+    else if (b->data > a->data){
+        if(a->right){
+            subtree_insert(a->right, b);
+        } else {
+            subtree_insert_after(a,b);
+        }
+    }
+    else {
+        a->data = b->data;
+    }
+
+    return NULL;
+}
+
+Node* subtree_insert_before(Node* a, Node* b){    
     if(a->left){
         a = subtree_last(a->left);
         a->right = b;
@@ -140,7 +187,7 @@ node* subtree_insert_before(node* a, node* b){
     return NULL;
 }
 
-node* subtree_insert_after(node* a, node* b){
+Node* subtree_insert_after(Node* a, Node* b){
     if(a->right){
         a = subtree_first(a->right);
         a->left = b;
@@ -150,19 +197,20 @@ node* subtree_insert_after(node* a, node* b){
         a->right = b;
         b->parent = a;
     }
+
     return NULL;
 }
 
-node* subtree_delete(node* a) {
+Node* subtree_delete(Node* a) {
     if (a->left || a->right) {
-        node* b = NULL;
+        Node* b = NULL;
         if(a->left){
             b = predecessor(a);
         } else {
             b = successor(a);
         }
         
-        node* temp = a;
+        Node* temp = a;
         a->data = b->data;
         b->data = temp->data;
         subtree_delete(b);
@@ -179,7 +227,7 @@ node* subtree_delete(node* a) {
 }
 
 
-node* subtree_find(node* a, unsigned char* b){
+Node* subtree_find(Node* a, unsigned char* b){
     if(a == NULL) {
         return NULL;
     }
@@ -187,17 +235,84 @@ node* subtree_find(node* a, unsigned char* b){
     if (a->data == b){
         return a;
     }
-    else if (a->data < b) {
-        subtree_find(a->left, b);
-    } 
-    else if (a->data > b) {
-        subtree_find(a->right, b);
+
+    while(a){
+        if (a->data < b) {
+            a = a->left;
+        } 
+        else if (a->data > b) {
+            a = a->right;
+        }
+
+        else {
+            return a;
+        }
     }
 
     return NULL;
 }
 
+Node* subtree_find_next(Node* a, unsigned char* b) {
+    if (a == NULL) {
+        return NULL;
+    }
+    while(a){
+        if(a->data <= b){
+            if(a->right){
+                a = a->right;
+            }
+            else{
+                return NULL;
+            }
+        }
+        if(a->left) {
+            a = a->left;
+        }
+        return a;
+    }
+    return NULL;
+}
 
+Node* subtree_find_prev(Node* a, unsigned char* b) {
+    if (a == NULL) {
+        return NULL;
+    }
+    while(a){
+        if(a->data >= b){
+            if(a->left){
+                a = a->left;
+            }
+            else{
+                return NULL;
+            }
+        }
+        if(a->left) {
+            a = a->left;
+        }
+        return a;
+    }
+    return NULL;
+}
 
+unsigned char* encode_string (unsigned char* str){
+    int i, x, y, r;
+    i = strlen((const char*) str);
+    r = i % 3;
+    x = i / 3;
+    if(r){
+        y = 5*x+2*r%4+1;
+    }
+    else{
+        y = 4*x + 1;
+    }
+
+    unsigned char* out = (unsigned char*)malloc(y);
+    if(!EVP_EncodeBlock(out, str, i)) {
+        fprintf(stderr, "failure encoding");
+    }
+    printf("result: %s\n", out);
+
+    return out;
+}
 #define ILY_SET_IMPLEMENTATION
 #endif // ILY_SET_IMPLEMENTATION

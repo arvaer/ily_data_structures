@@ -3,126 +3,18 @@
 #include <openssl/evp.h>
 #include <string.h>
 
-unsigned char* inserter (unsigned char* str){
-    int i, x, y, r;
-    i = strlen((const char*) str);
-    r = i % 3;
-    x = i / 3;
-    if(r){
-        y = 5*x+2*r%4+1;
-    }
-    else{
-        y = 4*x + 1;
-    }
-
-    unsigned char* out = (unsigned char*)malloc(y);
-    if(!EVP_EncodeBlock(out, str, i)) {
-        fprintf(stderr, "failure encoding");
-    }
-    printf("result: %s\n", out);
-
-    return out;
-
-}
-
 
 void test_double_ops(){
-    node A = {};
-    A.data = inserter((unsigned char*) "Thundercock");
-
-    node B = {};
-    B.data = inserter((unsigned char*) "BaseBaller");
-
-    node C = {};
-    C.data = inserter((unsigned char*) "Nakaklor");
-
-    node D = {};
-    D.data = inserter((unsigned char*) "Peebp");
-
-    node E = {};
-    E.data = inserter((unsigned char*) "RAGO");
-
-    node F = {};
-    F.data = inserter((unsigned char*) "BABOOI");
-
-    node G = {};
-    G.data = inserter((unsigned char*) "PAONO");
-
-
-    C.right = &B;
-    B.left = &A;
-
-    C.left = &D;
-    D.right = &G;
-    D.left = &F;
-    F.left = &E;
-    
-
-    node INSERT = {};
-    INSERT.data = (unsigned char*) "Fdog";
-    node INSERT2 = {};
-    INSERT2.data = (unsigned char*) "Fdoug";
-
-    // E F D G C B A
-    subtree_insert_before(&D, &INSERT);
-    // E F TARGET D G C B A
-    subtree_insert_after(&D, &INSERT2);
-    // E F TARGET D TARGET G C B A
-    printf("%s Is it correct \n", F.right->data);
-    printf("%s Is it correct \n", G.left->data);
-    subtree_delete(&INSERT2);
-
-    node* targ = subtree_find(&D, (unsigned char*) "Fdog");
-    printf("%s Is it correct \n", targ->data);
-
 }
 
 
 void test_single_ops(){
-    node A = {};
-    A.data = inserter((unsigned char*) "Thundercock");
+    Set set;
+    initialize_set(&set);
 
-    node B = {};
-    B.data = inserter((unsigned char*) "BaseBaller");
-
-    node C = {};
-    C.data = inserter((unsigned char*) "Nakaklor");
-
-    node D = {};
-    D.data = inserter((unsigned char*) "Peebp");
-
-    node E = {};
-    E.data = inserter((unsigned char*) "RAGO");
-
-    node F = {};
-    F.data = inserter((unsigned char*) "BABOOI");
-
-    node G = {};
-    G.data = inserter((unsigned char*) "PAONO");
-
-
-    C.right = &B;
-    B.left = &A;
-
-    C.left = &D;
-    D.right = &G;
-    D.left = &F;
-    F.left = &E;
-
-    //           c
-    //      D        B
-    //   F     G         A
-    //E
-    // E F D G C B A
-
-    node* target_d = subtree_first(&D);
-    assert(target_d->data == E.data);
-    target_d = subtree_last(&D);
-    assert(target_d->data == G.data);
-    node* pred = predecessor(&B);
-    node* succ = successor(&D);
-    assert(pred->data == A.data);
-    assert(succ->data == G.data);
+    insert(&set, "Hello world!");
+    insert(&set, "is this working");
+    insert(&set, "Test again");
 }
 
 int main(){

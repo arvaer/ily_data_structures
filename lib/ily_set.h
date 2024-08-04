@@ -18,6 +18,17 @@ unsigned char* encode_string (unsigned char* str);
 #define ILY_SET_INSERT
 #endif // ILY_SET_INSERT
 
+#ifndef ILY_SET_COMPARE
+#include <openssl/evp.h>
+#include <string.h>
+int lt(unsigned char* s1, unsigned char* s2);
+int leq(unsigned char* s1, unsigned char* s2);
+int gt(unsigned char* s1, unsigned char* s2);
+int geq(unsigned char* s1, unsigned char* s2);
+int eq(unsigned char* s1, unsigned char* s2);
+
+#define ILY_SET_COMPARE
+#endif // ILY_SET_COMPARE
 
 typedef struct Node {
     unsigned char* data;
@@ -39,6 +50,7 @@ typedef struct Set{
 int initialize_set(Set* set);
 int free_set(Set* set);
 int insert(Set* set, const char* item);
+int remove_item(Set* set, const char* item);
 
 // Node / Tree Traversal
 Node* subtree_first(Node* root);
@@ -51,6 +63,7 @@ Node* subtree_insert_after(Node*a, Node*b);
 Node* subtree_find(Node* a, unsigned char* b);
 Node* subtree_find_next(Node* a, unsigned char* b);
 Node* subtree_find_prev(Node* a, unsigned char* b);
+Node* subtree_delete(Node* a);
 
 #endif // ILY_SET_H
 #ifndef ILY_SET_IMPLEMENTATION
@@ -90,7 +103,24 @@ int insert(Set* set, const char* item){
     return 1;
 }
 
+int remove_item(Set* set, const char* item) {
+    unsigned char* u_item = (unsigned char*) item; //static cast
+    unsigned char* encoded_string = encode_string(u_item);
 
+    Node* target = subtree_find(set->root, encoded_string);
+    if(target) {
+        subtree_delete(target);
+        if(target->parent) {
+            set->root = NULL; 
+        }
+
+        free(target);
+        target = NULL;
+        return 1;
+    }
+
+    return 0;
+}
 
 // Node Traversal Ops
 Node* subtree_first(Node* root){
@@ -153,14 +183,14 @@ Node* subtree_insert(Node* a, Node* b){
    if ((a == NULL || b == NULL) && (a->data == b->data)) {
        return NULL;
    }
-    if(b->data < a->data){
+    if(lt(b->data, a->data)){
         if(a->left){
             subtree_insert(a->left, b);
         } else {
             subtree_insert_before(a,b);
         }
     }
-    else if (b->data > a->data){
+    else if (gt(b->data , a->data)){
         if(a->right){
             subtree_insert(a->right, b);
         } else {
@@ -237,10 +267,10 @@ Node* subtree_find(Node* a, unsigned char* b){
     }
 
     while(a){
-        if (a->data < b) {
+        if (gt(a->data ,b)) {
             a = a->left;
         } 
-        else if (a->data > b) {
+        else if (lt(a->data , b)) {
             a = a->right;
         }
 
@@ -257,7 +287,7 @@ Node* subtree_find_next(Node* a, unsigned char* b) {
         return NULL;
     }
     while(a){
-        if(a->data <= b){
+        if(leq(a->data, b)){
             if(a->right){
                 a = a->right;
             }
@@ -278,7 +308,7 @@ Node* subtree_find_prev(Node* a, unsigned char* b) {
         return NULL;
     }
     while(a){
-        if(a->data >= b){
+        if(geq(a->data, b)){
             if(a->left){
                 a = a->left;
             }
@@ -310,9 +340,70 @@ unsigned char* encode_string (unsigned char* str){
     if(!EVP_EncodeBlock(out, str, i)) {
         fprintf(stderr, "failure encoding");
     }
-    printf("result: %s\n", out);
 
     return out;
+}
+
+int lt(unsigned char* us1, unsigned char* us2){
+    const char* s1 = (const char *)us1;
+    const char* s2 = (const char *)us2;
+
+    if(s1  == NULL || s2 == NULL){
+        return 0;
+    }
+    int result = strcmp(s1, s2);
+    if (result < 0) return 1;
+
+    return 0;
+}
+int leq(unsigned char* us1, unsigned char* us2){
+    const char* s1 = (const char *)us1;
+    const char* s2 = (const char *)us2;
+
+    if(s1  == NULL || s2 == NULL){
+        return 0;
+    }
+    int result = strcmp(s1, s2);
+    if (result <= 0) return 1;
+
+    return 0;
+}
+
+int gt(unsigned char* us1, unsigned char* us2){
+    const char* s1 = (const char *)us1;
+    const char* s2 = (const char *)us2;
+
+    if(s1  == NULL || s2 == NULL){
+        return 0;
+    }
+    int result = strcmp(s1, s2);
+    if (result > 0) return 1;
+
+    return 0;
+}
+int geq(unsigned char* us1, unsigned char* us2){
+    const char* s1 = (const char *)us1;
+    const char* s2 = (const char *)us2;
+
+    if(s1  == NULL || s2 == NULL){
+        return 0;
+    }
+    int result = strcmp(s1, s2);
+    if (result >= 0) return 1;
+
+    return 0;
+}
+int eq(unsigned char* us1, unsigned char* us2){
+    const char* s1 = (const char *)us1;
+    const char* s2 = (const char *)us2;
+
+    if(s1  == NULL || s2 == NULL){
+        return 0;
+    }
+    int result = strcmp(s1, s2);
+    if (result == 0) return 1;
+
+    return 0;
 }
 #define ILY_SET_IMPLEMENTATION
 #endif // ILY_SET_IMPLEMENTATION

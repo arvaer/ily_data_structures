@@ -15,6 +15,8 @@ void test_single_ops(){
     insert(&set, "Hello world!");
     insert(&set, "is this working");
     insert(&set, "Test again");
+
+    remove_item(&set, "Test again");
 }
 
 int main(){

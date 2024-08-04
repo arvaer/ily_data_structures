@@ -27,15 +27,15 @@ typedef struct node {
 
 
 typedef struct Set{
-    node** items;
+    void* items;
     size_t size;
     size_t capacity;
 } Set;
 
 
 // Set API 
-void initialize_set(Set* set);
-void free_set(Set* set);
+int initialize_set(Set* set);
+int free_set(Set* set);
 
 // Node / Tree Traversal
 node* subtree_first(node* root);
@@ -46,11 +46,29 @@ node* subtree_insert_before(node* a, node* b);
 node* subtree_insert_after(node*a, node*b);
 int subtree_insert(node* a, node* b);
 node* subtree_find(node* a, unsigned char* b);
-int subtree_find_next(node* a, node* b);
-int subtree_find_prev(node* a, node* b);
+node* subtree_find_next(node* a, node* b);
+node* subtree_find_prev(node* a, node* b);
 
 #endif // ILY_SET_H
 #ifndef ILY_SET_IMPLEMENTATION
+
+
+
+
+
+// Set backed by BST ops
+int initialize_set(Set* set) {
+    
+}
+
+
+
+
+
+
+
+
+
 
 // Node Traversal Ops
 node* subtree_first(node* root){
@@ -135,21 +153,47 @@ node* subtree_insert_after(node* a, node* b){
     return NULL;
 }
 
-int subtree_delete(node* a) {
-    if ()
+node* subtree_delete(node* a) {
+    if (a->left || a->right) {
+        node* b = NULL;
+        if(a->left){
+            b = predecessor(a);
+        } else {
+            b = successor(a);
+        }
+        
+        node* temp = a;
+        a->data = b->data;
+        b->data = temp->data;
+        subtree_delete(b);
+    }
+
+    if (a->parent){
+       if (a->parent->left == a){
+            a->parent->left = NULL;
+       }else{
+            a->parent->right = NULL;
+       }
+    }
+    return a;
 }
 
 
 node* subtree_find(node* a, unsigned char* b){
+    if(a == NULL) {
+        return NULL;
+    }
+
     if (a->data == b){
         return a;
     }
-    if (a->data < b) {
+    else if (a->data < b) {
         subtree_find(a->left, b);
     } 
-    if (a->data > b) {
+    else if (a->data > b) {
         subtree_find(a->right, b);
     }
+
     return NULL;
 }
 

@@ -60,14 +60,21 @@ void test_double_ops(){
 
     node INSERT = {};
     INSERT.data = (unsigned char*) "Fdog";
+    node INSERT2 = {};
+    INSERT2.data = (unsigned char*) "Fdoug";
 
     // E F D G C B A
     subtree_insert_before(&D, &INSERT);
     // E F TARGET D G C B A
-    subtree_insert_after(&D, &INSERT);
+    subtree_insert_after(&D, &INSERT2);
     // E F TARGET D TARGET G C B A
     printf("%s Is it correct \n", F.right->data);
     printf("%s Is it correct \n", G.left->data);
+    subtree_delete(&INSERT2);
+
+    node* targ = subtree_find(&D, (unsigned char*) "Fdog");
+    printf("%s Is it correct \n", targ->data);
+
 }
 
 

@@ -32,11 +32,11 @@
 #endif // ILY_SET_COMPARE
 
 
-#define SWAP(a, b) \
-        Node* temp = {}; \
-        temp = a; \
-        a = b; \
-        b = temp; 
+#define SWAP_NODES(a, b) \
+        Node temp; \
+        temp.data    = a->data; \
+        a->data      = b->data; \
+        b->data      = temp.data; \
 
 typedef struct Node {
     unsigned char* data;
@@ -284,7 +284,7 @@ Node* subtree_delete(Node* a) {
             b = successor(a);
         }
         
-        SWAP(a,b);
+        SWAP_NODES(a,b);
         subtree_delete(b);
     }
 
@@ -378,7 +378,7 @@ int subtree_rotate_right(Node* d){
     Node* a = b->left;
     Node* c = b->right;
 
-    SWAP(b,d);
+    SWAP_NODES(b,d);
     b->left = a;
     b->right = d;
     d->left = c;
@@ -403,7 +403,7 @@ int subtree_rotate_left(Node* b){
     Node* c = d->left;
     Node* e = d->right;
 
-    SWAP(b,d);
+    SWAP_NODES(b,d);
     d->left = b;
     d->right = e;
     b->left = a;

@@ -1,5 +1,5 @@
 CFLAGS =-Wall -Wextra -O0  -Ilib -g
-LDFLAGS = -lssl  -lcrypto
+LDFLAGS = -lssl  -lcrypto -lm
 
 Test: set.c
 	set xe

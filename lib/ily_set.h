@@ -1,5 +1,6 @@
 #ifndef ILY_SET_H
 #define ILY_SET_H
+#include <math.h>
 
 #ifndef ILY_SET_MALLOC
 #include <stdlib.h>
@@ -14,27 +15,35 @@
 #ifndef ILY_SET_INSERT
 #include <openssl/evp.h>
 #include <string.h>
-unsigned char* encode_string (unsigned char* str);
+    unsigned char* encode_string (unsigned char* str);
 #define ILY_SET_INSERT
 #endif // ILY_SET_INSERT
 
 #ifndef ILY_SET_COMPARE
 #include <openssl/evp.h>
 #include <string.h>
-int lt(unsigned char* s1, unsigned char* s2);
-int leq(unsigned char* s1, unsigned char* s2);
-int gt(unsigned char* s1, unsigned char* s2);
-int geq(unsigned char* s1, unsigned char* s2);
-int eq(unsigned char* s1, unsigned char* s2);
+    int lt(unsigned char* s1, unsigned char* s2);
+    int leq(unsigned char* s1, unsigned char* s2);
+    int gt(unsigned char* s1, unsigned char* s2);
+    int geq(unsigned char* s1, unsigned char* s2);
+    int eq(unsigned char* s1, unsigned char* s2);
 
 #define ILY_SET_COMPARE
 #endif // ILY_SET_COMPARE
 
+
+#define SWAP(a, b) \
+        Node* temp = {}; \
+        temp = a; \
+        a = b; \
+        b = temp; 
+
 typedef struct Node {
     unsigned char* data;
+    size_t height;
     struct Node* parent; 
-    struct Node* left;   // CAR
-    struct Node* right; // CDR
+    struct Node* left;   
+    struct Node* right; 
 } Node;
 
 
@@ -53,10 +62,10 @@ int insert(Set* set, const char* item);
 int remove_item(Set* set, const char* item);
 
 // Node / Tree Traversal
-Node* subtree_first(Node* root);
 Node* successor(Node* root);
 Node* predecessor(Node* root);
 
+Node* subtree_first(Node* root);
 Node* subtree_insert(Node* a, Node* b);
 Node* subtree_insert_before(Node* a, Node* b);
 Node* subtree_insert_after(Node*a, Node*b);
@@ -64,11 +73,12 @@ Node* subtree_find(Node* a, unsigned char* b);
 Node* subtree_find_next(Node* a, unsigned char* b);
 Node* subtree_find_prev(Node* a, unsigned char* b);
 Node* subtree_delete(Node* a);
+void subtree_maintain(Node* a);
+int subtree_rotate_left(Node* a);
+int subtree_rotate_right(Node* a);
 
 #endif // ILY_SET_H
 #ifndef ILY_SET_IMPLEMENTATION
-
-
 // Set backed by BST ops
 int initialize_set(Set* set) {
     set->items = NULL;
@@ -99,6 +109,7 @@ int insert(Set* set, const char* item){
         set->items = new_items;
     }
     subtree_insert(set->root, node);
+    subtree_maintain(node);
     set->items[set->size++] = node;
     return 1;
 }
@@ -110,8 +121,10 @@ int remove_item(Set* set, const char* item) {
     Node* target = subtree_find(set->root, encoded_string);
     if(target) {
         subtree_delete(target);
-        if(target->parent) {
+        if(!target->parent) {
             set->root = NULL; 
+        }else{
+            subtree_maintain(target->parent);
         }
 
         free(target);
@@ -123,6 +136,37 @@ int remove_item(Set* set, const char* item) {
 }
 
 // Node Traversal Ops
+size_t calculate_height(Node* a){
+    if(!a->left && !a->right){
+        return 1;
+    }
+    else if(a->left && !a->right){
+        return a->left->height + 1;
+    }
+    else if (!a->left && a->right){
+        return a->right->height + 1;
+    }
+    else {
+        double left_h = (double)a->left->height;
+        double right_h = (double)a->right->height;
+        
+        return fmax(left_h, right_h);
+    }
+}
+
+int calculate_skew(Node* a) {
+    size_t right = 0;
+    size_t left = 0;
+    if(a->right) {
+        right = calculate_height(a->right);
+    }
+    if(a->left) {
+        left = calculate_height(a->left);
+    }
+
+    return right - left;
+}
+
 Node* subtree_first(Node* root){
     Node* prev_node = NULL;
     if(!root->left){
@@ -180,7 +224,7 @@ Node* predecessor(Node* root){
 
 
 Node* subtree_insert(Node* a, Node* b){
-   if ((a == NULL || b == NULL) && (a->data == b->data)) {
+   if ((a == NULL || b == NULL) && (eq(a->data, b->data))) {
        return NULL;
    }
     if(lt(b->data, a->data)){
@@ -240,9 +284,7 @@ Node* subtree_delete(Node* a) {
             b = successor(a);
         }
         
-        Node* temp = a;
-        a->data = b->data;
-        b->data = temp->data;
+        SWAP(a,b);
         subtree_delete(b);
     }
 
@@ -253,6 +295,8 @@ Node* subtree_delete(Node* a) {
             a->parent->right = NULL;
        }
     }
+
+    free(a->data);
     return a;
 }
 
@@ -262,7 +306,7 @@ Node* subtree_find(Node* a, unsigned char* b){
         return NULL;
     }
 
-    if (a->data == b){
+    if (eq(a->data, b)){
         return a;
     }
 
@@ -324,6 +368,90 @@ Node* subtree_find_prev(Node* a, unsigned char* b) {
     return NULL;
 }
 
+int subtree_rotate_right(Node* d){
+    if(!d->left){
+        fprintf(stderr, "rotation failed: d.left not present");
+        return 1;
+    }
+    Node* b = d->left;
+    Node* e = d->right;
+    Node* a = b->left;
+    Node* c = b->right;
+
+    SWAP(b,d);
+    b->left = a;
+    b->right = d;
+    d->left = c;
+    d->right = e;
+    if(a) a->parent = b;
+    if(e) e->parent = d;
+
+    b->height = calculate_height(b);
+    d->height = calculate_height(d);
+    return 0;
+
+}
+
+int subtree_rotate_left(Node* b){
+    if(!b->right){
+        fprintf(stderr, "rotation failed: b.right not present");
+        return 1;
+    }
+
+    Node* a = b->left;
+    Node* d = b->right;
+    Node* c = d->left;
+    Node* e = d->right;
+
+    SWAP(b,d);
+    d->left = b;
+    d->right = e;
+    b->left = a;
+    b->right = c;
+    if(a) a->parent = b;
+    if(e) e->parent = d;
+
+    b->height = calculate_height(b);
+    d->height = calculate_height(d);
+
+    return 0;
+}
+
+
+
+int subtree_rebalance(Node* a){
+    int skew = calculate_skew(a);
+    if(skew == 2){
+        if(a->right) {
+            int r_skew = calculate_skew(a->right);
+            if(r_skew < 0) subtree_rotate_right(a->right);
+        }
+        subtree_rotate_left(a);
+    }
+    if(skew == -2) {
+        if(a->left){
+            int l_skew = calculate_skew(a->left);
+            if(l_skew < 0) subtree_rotate_left(a->left);
+        }
+        subtree_rotate_right(a);
+    }
+
+    return 0;
+}
+
+void subtree_maintain(Node* a) {
+    while(a) {
+        subtree_rebalance(a);
+        a->height = calculate_height(a);
+        if(a->parent) {
+            a = a->parent;
+        } else {
+            break;
+        }
+    }
+}
+
+// helper functions
 unsigned char* encode_string (unsigned char* str){
     int i, x, y, r;
     i = strlen((const char*) str);
@@ -356,6 +484,7 @@ int lt(unsigned char* us1, unsigned char* us2){
 
     return 0;
 }
+
 int leq(unsigned char* us1, unsigned char* us2){
     const char* s1 = (const char *)us1;
     const char* s2 = (const char *)us2;
@@ -381,6 +510,7 @@ int gt(unsigned char* us1, unsigned char* us2){
 
     return 0;
 }
+
 int geq(unsigned char* us1, unsigned char* us2){
     const char* s1 = (const char *)us1;
     const char* s2 = (const char *)us2;
@@ -393,6 +523,7 @@ int geq(unsigned char* us1, unsigned char* us2){
 
     return 0;
 }
+
 int eq(unsigned char* us1, unsigned char* us2){
     const char* s1 = (const char *)us1;
     const char* s2 = (const char *)us2;

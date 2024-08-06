@@ -16,6 +16,19 @@ void test_single_ops(){
     insert(&set, "is this working");
     insert(&set, "Test again");
 
+    insert(&set, "Dunking wagon!");
+    insert(&set, "is tking");
+    insert(&set, "Tesasdfad again");
+    insert(&set, "Tesasdfad aFISASDFK");
+    insert(&set, "Tesasa Traogn");
+    insert(&set, "Thunkder  h");
+    insert(&set, "Sometihng again");
+    insert(&set, "TesDragonn again");
+    insert(&set, "gargba again");
+    insert(&set, "gargba skahdf");
+    insert(&set, "gargba skahdf");
+    insert(&set, "This has a lot more things onw");
+    insert(&set, "Sometihng in the waterore things onw");
     remove_item(&set, "Test again");
 }
 

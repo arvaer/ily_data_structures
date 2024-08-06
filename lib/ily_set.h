@@ -431,7 +431,7 @@ int subtree_rebalance(Node* a){
     if(skew == -2) {
         if(a->left){
             int l_skew = calculate_skew(a->left);
-            if(l_skew < 0) subtree_rotate_left(a->left);
+            if(l_skew > 0) subtree_rotate_left(a->left);
         }
         subtree_rotate_right(a);
     }

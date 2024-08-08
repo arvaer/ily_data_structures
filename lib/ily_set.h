@@ -16,6 +16,7 @@
 #include <openssl/evp.h>
 #include <string.h>
     unsigned char* encode_string (unsigned char* str);
+    unsigned char* decode_string (unsigned char* str);
 #define ILY_SET_INSERT
 #endif // ILY_SET_INSERT
 
@@ -60,6 +61,16 @@ int initialize_set(Set* set);
 int free_set(Set* set);
 int insert(Set* set, const char* item);
 int remove_item(Set* set, const char* item);
+int height(Set* set);
+const char* pop(Set* set);
+int filter(Set* in, Set* out, const char* pattern);
+Set* build(Set* set, Node** items);
+int disjoint_union(Set* out, Set* s1, Set* s2);
+int collapse(Set* out, Set** sets);
+const char* min(Set* set);
+const char* max(Set* set);
+
+
 
 // Node / Tree Traversal
 Node* successor(Node* root);
@@ -134,6 +145,34 @@ int remove_item(Set* set, const char* item) {
 
     return 0;
 }
+
+int height(Set* set) {
+    if(!set){
+        fprintf(stderr, "Function called with null set");
+
+    }
+    if(!set->root){
+        fprintf(stderr, "Function called with null root");
+
+    }
+    return set->root->height;
+}
+
+const char* pop(Set* set){
+    if(!set){
+        fprintf(stderr, "Function called with null set");
+
+    }
+    if(!set->root){
+        fprintf(stderr, "Function called with null root");
+
+    }
+
+
+    return "hello";
+    
+}
+
 
 // Node Traversal Ops
 size_t calculate_height(Node* a){
@@ -470,6 +509,26 @@ unsigned char* encode_string (unsigned char* str){
     }
 
     return out;
+}
+
+unsigned char* decode_string (unsigned char* str){
+    int n;
+    n = strlen((const char*) str);
+    //iterate through the sting in reverse order and 
+    //remove the =='s because that's padding
+
+    unsigned char* back = n + str;
+    while(*(--back) == '='){
+        printf("hey: %s \n", back);
+    };
+
+    printf("hey: %s \n", back);
+    printf("hey: %s \n", back + 1);
+    *(back+1) = '\0';
+
+    return str;
+    
+
 }
 
 int lt(unsigned char* us1, unsigned char* us2){

@@ -35,5 +35,8 @@ void test_single_ops(){
 int main(){
     test_single_ops();
     test_double_ops();
+
+
+    printf("decoded: %s", decode_string((unsigned char *)"abcd8=="));
     return 0;
 }

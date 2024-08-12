@@ -39,6 +39,21 @@
         a->data      = b->data; \
         b->data      = temp.data; \
 
+#define SWAP_FULL_NODES(a, b) \
+        Node temp; \
+        temp.data    = a->data; \
+        a->data      = b->data; \
+        b->data      = temp.data; \
+        temp.parent    = a->parent; \
+        a->parent      = b->parent; \
+        b->parent      = temp.parent; \
+        temp.left    = a->left; \
+        a->left      = b->left; \
+        b->left      = temp.left; \
+        temp.right    = a->right; \
+        a->right      = b->right; \
+        b->right      = temp.right; \
+
 typedef struct Node {
     unsigned char* data; //8
     size_t height; //8
@@ -60,6 +75,7 @@ int initialize_set(Set* set);
 int free_set(Set* set);
 int insert(Set* set, const char* item);
 int remove_item(Set* set, const char* item);
+void dump_set(Set* set);
 int height(Set* set);
 const char* pop(Set* set);
 int filter(Set* in, Set* out, const char* pattern);
@@ -94,6 +110,46 @@ int initialize_set(Set* set) {
     set->size = 0;
     set->capacity = 0;
     return 1;
+}
+
+void print_stuff(Node* root){
+    char* decoded_data = (char*)decode_string(root->data);
+    printf("Node: %s, ", decoded_data);
+
+    if(root->left){
+        char* left = (char*)decode_string(root->left->data);
+        printf("left: %s, ", left);
+    }
+    if(root->right){
+        char* right = (char*)decode_string(root->right->data);
+        printf("right: %s, ", right);
+    }
+    if(root->parent){
+        char* parent = (char*)decode_string(root->parent->data);
+        printf("parent: %s", parent);
+    }
+    printf("\n");
+
+}
+
+void dump_set(Set* set){
+    if(!set) {
+        fprintf(stderr, "No set \n");
+    }
+    if(!set->root) {
+        fprintf(stderr, "No set root \n");
+    }
+
+    Node* root = set->root;
+    Node* left = subtree_first(root->left);
+    printf("%%%%%%%%%%NODES%%%%%%%%%%%%\n");
+    while (left){
+        print_stuff(left);
+        left = successor(left);
+    }
+
+    print_stuff(root);
+    printf("%%%%%%%%%%%%%%%%%%%%%%\n");
 }
 
 int insert(Set* set, const char* item){
@@ -217,17 +273,15 @@ int calculate_skew(Node* a) {
 }
 
 Node* subtree_first(Node* root){
-    Node* prev_node = NULL;
-    if(!root->left){
+    if(root && !root->left){
         return root;
     }
 
-    while(root){
-        prev_node = root;
+    while(root && root->left){
         root = root->left;
     }
 
-    return prev_node;
+    return root;
 }
 
 Node* subtree_last(Node* root){
@@ -241,7 +295,7 @@ Node* subtree_last(Node* root){
         root = root->right;
     }
 
-    return prev_node;
+    return NULL;
 }
 
 
@@ -251,11 +305,11 @@ Node* successor(Node* root){
     }
     while(root->parent){
         if (root == root->parent->left){
-            return root;
+            return root->parent;
         }
         root = root->parent;
     }
-    return root;
+    return NULL;
 };
 
 Node* predecessor(Node* root){
@@ -479,7 +533,7 @@ Node* subtree_rotate_left(Node* b){
     }
 
     d->left = b;
-    if(b) e->parent = d;
+    if(b) b->parent = d;
 
     d->right = e;
     if(e) e->parent = d;
@@ -503,14 +557,14 @@ Node* subtree_rebalance(Node* a){
     if(skew == 2){
         if(a->right) {
             int r_skew = calculate_skew(a->right);
-            if(r_skew < 0) return subtree_rotate_right(a->right);
+            if(r_skew < 0) subtree_rotate_right(a->right);
         }
         return subtree_rotate_left(a);
     }
     if(skew == -2) {
         if(a->left){
             int l_skew = calculate_skew(a->left);
-            if(l_skew > 0) return subtree_rotate_left(a->left);
+            if(l_skew > 0) subtree_rotate_left(a->left);
         }
         return subtree_rotate_right(a);
     }

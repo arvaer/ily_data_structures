@@ -1,5 +1,6 @@
 #include "ily_set.h"
-#include "stdio.h"
+#include <stdio.h>
+#include <stdalign.h>
 #include <openssl/evp.h>
 #include <string.h>
 
@@ -15,7 +16,6 @@ void test_single_ops(){
     insert(&set, "Hello world!");
     insert(&set, "is this working");
     insert(&set, "Test again");
-
     insert(&set, "Dunking wagon!");
     insert(&set, "is tking");
     insert(&set, "Tesasdfad again");
@@ -29,7 +29,19 @@ void test_single_ops(){
     insert(&set, "gargba skahdf");
     insert(&set, "This has a lot more things onw");
     insert(&set, "Sometihng in the waterore things onw");
-    remove_item(&set, "Test again");
+
+    const char* item = pop(&set);
+    printf("the item: %s\n", item);
+    
+    item = pop(&set);
+    printf("the item: %s\n", item);
+
+    item = pop(&set);
+    printf("the item: %s\n", item);
+    item = pop(&set);
+    printf("the item: %s\n", item);
+    item = pop(&set);
+    printf("the item: %s\n", item);
 }
 
 int main(){
@@ -37,6 +49,5 @@ int main(){
     test_double_ops();
 
 
-    printf("decoded: %s", decode_string((unsigned char *)"abcd8=="));
     return 0;
 }

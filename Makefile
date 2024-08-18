@@ -1,4 +1,4 @@
-CFLAGS =-Wall -Wextra -O0  -Ilib -g
+CFLAGS =-Wall -Wextra -O0  -Ilib -g 
 LDFLAGS = -lssl  -lcrypto -lm
 
 Test: set.c

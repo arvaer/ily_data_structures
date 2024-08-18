@@ -69,6 +69,18 @@ typedef struct Set{
     size_t size;
 } Set;
 
+// Node API
+int init_node(Node* node);
+Node* subtree_first(Node* root);
+Node* subtree_last(Node* root);
+
+Node* successor(Node* root);
+Node* predecessor(Node* root);
+
+int subtree_insert_after(Node* a, Node* b);
+int subtree_insert_before(Node* a, Node* b);
+int subtree_delete(Node* root);
+
 
 // Set API 
 int initialize_set(Set* set);
@@ -84,505 +96,121 @@ int disjoint_union(Set* out, Set* s1, Set* s2);
 int collapse(Set* out, Set** sets);
 const char* min(Set* set);
 const char* max(Set* set);
-
-
-
-// Node / Tree Traversal
-Node* successor(Node* root);
-Node* predecessor(Node* root);
-
-Node* subtree_first(Node* root);
-Node* subtree_insert(Node* a, Node* b);
-Node* subtree_insert_before(Node* a, Node* b);
-Node* subtree_insert_after(Node*a, Node*b);
-Node* subtree_find(Node* a, unsigned char* b);
-Node* subtree_find_next(Node* a, unsigned char* b);
-Node* subtree_find_prev(Node* a, unsigned char* b);
-Node* subtree_delete(Node* a);
-Node* subtree_maintain(Node* a);
-Node* subtree_rotate_left(Node* a);
-Node* subtree_rotate_right(Node* a);
-
 #endif // ILY_SET_H
 #ifndef ILY_SET_IMPLEMENTATION
-// Set backed by BST ops
-int initialize_set(Set* set) {
-    set->size = 0;
-    set->capacity = 0;
-    return 1;
+
+#define SUCCESS 1
+#define FAIL 0
+
+int init_node(Node* node){
+    if (!node) return FAIL;
+
+    memset(node, 0, sizeof(Node));
+    node->data = (unsigned char*)""; //8
+
+    return SUCCESS;
 }
 
-void print_stuff(Node* root){
-    char* decoded_data = (char*)decode_string(root->data);
-    printf("Node: %s, ", decoded_data);
-
-    if(root->left){
-        char* left = (char*)decode_string(root->left->data);
-        printf("left: %s, ", left);
+Node* subtree_first(Node* root) {
+    if(!root){
+        return NULL; 
     }
-    if(root->right){
-        char* right = (char*)decode_string(root->right->data);
-        printf("right: %s, ", right);
-    }
-    if(root->parent){
-        char* parent = (char*)decode_string(root->parent->data);
-        printf("parent: %s", parent);
-    }
-    printf("\n");
-
-}
-
-void dump_set(Set* set){
-    if(!set) {
-        fprintf(stderr, "No set \n");
-    }
-    if(!set->root) {
-        fprintf(stderr, "No set root \n");
-    }
-
-    Node* root = set->root;
-    Node* left = subtree_first(root->left);
-    printf("%%%%%%%%%%NODES%%%%%%%%%%%%\n");
-    while (left){
-        print_stuff(left);
-        left = successor(left);
-    }
-
-    print_stuff(root);
-    printf("%%%%%%%%%%%%%%%%%%%%%%\n");
-}
-
-int insert(Set* set, const char* item){
-    unsigned char* u_item = (unsigned char*) item; //static cast
-    unsigned char* encoded_string = encode_string(u_item);
-
-    Node* node = (Node*)malloc(sizeof(Node));
-    node->data = encoded_string;
-   
-    if(set->size >= set->capacity) {
-        if(set->capacity == 0) {
-           set->root = node;
-           set->capacity = 5;
-        } else {
-            set->capacity = set->size * 2;
-        }
-        
-    }
-    subtree_insert(set->root, node);
-    set->size++;
-    set->root = subtree_maintain(node);
-    return 1;
-}
-
-int remove_item(Set* set, const char* item) {
-    unsigned char* u_item = (unsigned char*) item; //static cast
-    unsigned char* encoded_string = encode_string(u_item);
-
-    Node* target = subtree_find(set->root, encoded_string);
-    if(target) {
-        subtree_delete(target);
-        if(!target->parent) {
-            set->root = NULL; 
-        }else{
-            subtree_maintain(target->parent);
-        }
-
-        free(target);
-        target = NULL;
-        set->size--;
-        return 1;
-    }
-
-    return 0;
-}
-
-const char* pop(Set* set) {
-    if(!set) {
-        fprintf(stderr, "No set \n");
-        return NULL;
-    }
-    if(!set->root) {
-        fprintf(stderr, "No set root \n");
-        return NULL;
-    }
-    Node* target = subtree_first(set->root);
-    if(target) {
-        char* decoded_data = (char*)decode_string(target->data);
-        char* buf = malloc(sizeof(buf) * strlen(decoded_data));
-        stpcpy(buf, decoded_data);
-
-        Node* parent = target->parent;
-        subtree_delete(target);
-        if(!parent) {
-            set->root = NULL; 
-        }else{
-            set->root = subtree_maintain(parent);
-        }
-
-        free(target);
-        target = NULL;
-        return buf;
-    }
-
-    return NULL;
-}
-
-int height(Set* set) {
-    if(!set){
-        fprintf(stderr, "Function called with null set");
-
-    }
-    if(!set->root){
-        fprintf(stderr, "Function called with null root");
-
-    }
-    return set->root->height;
-}
-
-
-// Node Traversal Ops
-size_t calculate_height(Node* a){
-    if(!a->left && !a->right){
-        return 1;
-    }
-    else if(a->left && !a->right){
-        return a->left->height + 1;
-    }
-    else if (!a->left && a->right){
-        return a->right->height + 1;
-    }
-    else {
-        double left_h = (double)a->left->height;
-        double right_h = (double)a->right->height;
-        
-        return fmax(left_h, right_h);
-    }
-}
-
-int calculate_skew(Node* a) {
-    size_t right = 0;
-    size_t left = 0;
-    if(a->right) {
-        right = calculate_height(a->right);
-    }
-    if(a->left) {
-        left = calculate_height(a->left);
-    }
-
-    return right - left;
-}
-
-Node* subtree_first(Node* root){
-    if(root && !root->left){
-        return root;
-    }
-
-    while(root && root->left){
+    while(root->left){
         root = root->left;
     }
-
     return root;
 }
 
-Node* subtree_last(Node* root){
-    Node* prev_node = NULL;
-    if(!root->right){
-        return root;
+Node* subtree_last(Node* root) {
+    if(!root){
+        return NULL; 
     }
-
-    while(root){
-        prev_node = root;
+    while(root->right){
         root = root->right;
     }
-
-    return NULL;
-}
-
-
-Node* successor(Node* root){
-    if(root->right){
-        return subtree_first(root->right);
-    }
-    while(root->parent){
-        if (root == root->parent->left){
-            return root->parent;
-        }
-        root = root->parent;
-    }
-    return NULL;
-};
-
-Node* predecessor(Node* root){
-    if(root->left){
-        return root->left;
-    }
-    while(root->parent){
-        if (root == root->parent->right){
-            return root;
-        }
-        root = root->parent;
-    }
     return root;
-};
-
-
-Node* subtree_insert(Node* a, Node* b){
-   if ((a == NULL || b == NULL) && (eq(a->data, b->data))) {
-       return NULL;
-   }
-    if(lt(b->data, a->data)){
-        subtree_insert_before(a,b);
-    }
-    else if (gt(b->data , a->data)){
-        subtree_insert_after(a,b);
-    }
-    else {
-        a->data = b->data;
-    }
-
-    return NULL;
 }
 
-Node* subtree_insert_before(Node* a, Node* b){    
-    if(a->left){
-        a = subtree_last(a->left);
+Node* successor(Node* node){
+    if(!node){
+        return NULL;
+    }
+    if(node->right) return subtree_first(node->right); 
+    while(node->parent && node->parent->right == node) node = node->parent;
+    return node->parent;
+}
+
+Node* predecessor(Node* node){
+    if(!node){
+        return NULL;
+    }
+    if(node->left) return subtree_last(node->left); 
+    while(node->parent && node->parent->left == node) node = node->parent;
+    return node->parent;
+}
+
+int subtree_insert_after(Node* a, Node* b) {
+    if(!a || !b) {
+        return FAIL;
+    }
+    if(!a->right){
         a->right = b;
         b->parent = a;
+        return SUCCESS;
     }
     else{
-        a->left = b;
-        b->parent = a;
-    }
-    return NULL;
-}
-
-Node* subtree_insert_after(Node* a, Node* b){
-    if(a->right){
         a = subtree_first(a->right);
         a->left = b;
         b->parent = a;
+        return SUCCESS;
+    }
+    return FAIL;
+}
+
+int subtree_insert_before(Node* a, Node* b) {
+    if(!a || !b) {
+        return FAIL;
+    }
+    if(!a->left){
+        a->left = b;
+        b->parent = a;
+        return SUCCESS;
     }
     else{
+        a = subtree_last(a->left);
         a->right = b;
         b->parent = a;
+        return SUCCESS;
     }
-
-    return NULL;
+    return FAIL;
 }
 
-Node* subtree_delete(Node* a) {
-    if (a->left || a->right) {
-        Node* b = NULL;
-        if(a->left){
-            b = predecessor(a);
-        } else {
-            b = successor(a);
+int subtree_delete(Node* root){
+    if(!root) return FAIL;
+    while(root){
+        if(root->left || root->right){
+            Node* sub = {};
+            if(root->left) sub = predecessor(root); 
+            else sub = successor(root);
+            SWAP_NODES(root, sub);
+            root = sub;
         }
-        
-        SWAP_NODES(a,b);
-        subtree_delete(b);
+        else break;
     }
-
-    if (a->parent){
-       if (a->parent->left == a){
-            a->parent->left = NULL;
-       }else{
-            a->parent->right = NULL;
-       }
-    }
-
-    free(a->data);
-    a->data = NULL;
-    return a;
-}
-
-
-Node* subtree_find(Node* a, unsigned char* b){
-    if(a == NULL) {
-        return NULL;
-    }
-
-    if (eq(a->data, b)){
-        return a;
-    }
-
-    while(a){
-        if (gt(a->data ,b)) {
-            a = a->left;
-        } 
-        else if (lt(a->data , b)) {
-            a = a->right;
+    if(root->parent){
+        Node* left = root->parent->left;
+        if(left == root) {
+            free(left->data);
+            root->parent->left = NULL;
+        } else{
+            Node* right = root->parent->right;
+            free(right->data);
+            root->parent->right = NULL;
         }
-
-        else {
-            return a;
-        }
+        return SUCCESS;
     }
+    return FAIL;
 
-    return NULL;
-}
-
-Node* subtree_find_next(Node* a, unsigned char* b) {
-    if (a == NULL) {
-        return NULL;
-    }
-    while(a){
-        if(leq(a->data, b)){
-            if(a->right){
-                a = a->right;
-            }
-            else{
-                return NULL;
-            }
-        }
-        if(a->left) {
-            a = a->left;
-        }
-        return a;
-    }
-    return NULL;
-}
-
-Node* subtree_find_prev(Node* a, unsigned char* b) {
-    if (a == NULL) {
-        return NULL;
-    }
-    while(a){
-        if(geq(a->data, b)){
-            if(a->left){
-                a = a->left;
-            }
-            else{
-                return NULL;
-            }
-        }
-        if(a->left) {
-            a = a->left;
-        }
-        return a;
-    }
-    return NULL;
-}
-
-Node* subtree_rotate_right(Node* d){
-    if(!d->left){
-        fprintf(stderr, "rotation failed: d.left not present");
-        return NULL;
-    }
-
-    Node* b = d->left;
-    Node* e = d->right;
-    Node* a = b->left;
-    Node* c = b->right;
-
-    SWAP_NODES(b,d);
-    if(d->parent){
-        if(d->parent->right == d){
-            d->parent->right = b;
-        }
-        else{
-            d->parent->left = b;
-        }
-        b->parent = d->parent;
-    }
-    else{
-        b->parent = NULL;
-    }
-
-
-    b->left = a;
-    if(a) a->parent = b;
-
-    b->right = d;
-    if(d) d->parent = b;
-
-    d->left = c;
-    if(c) c->parent = d;
-    d->right = e;
-    if(e) e->parent = d;
-
-    d->height = calculate_height(d);
-    b->height = calculate_height(b);
-    return b;
-
-}
-
-Node* subtree_rotate_left(Node* b){
-    if(!b->right){
-        fprintf(stderr, "rotation failed: b.right not present");
-        return NULL;
-    }
-
-    Node* a = b->left;
-    Node* d = b->right;
-    Node* c = d->left;
-    Node* e = d->right;
-
-    SWAP_NODES(b,d);
-    if(b->parent){
-        if(b->parent->right == b){
-            b->parent->right = d;
-        }
-        else{
-            b->parent->left = d;
-        }
-        d->parent = b->parent;
-    }
-    else{
-        d->parent = NULL;
-    }
-
-    d->left = b;
-    if(b) b->parent = d;
-
-    d->right = e;
-    if(e) e->parent = d;
-
-    b->left = a;
-    if(a) a->parent = b;
-
-    b->right = c;
-    if(c) c->parent = b;
-
-    b->height = calculate_height(b);
-    d->height = calculate_height(d);
-
-    return d;
-}
-
-
-
-Node* subtree_rebalance(Node* a){
-    int skew = calculate_skew(a);
-    if(skew == 2){
-        if(a->right) {
-            int r_skew = calculate_skew(a->right);
-            if(r_skew < 0) subtree_rotate_right(a->right);
-        }
-        return subtree_rotate_left(a);
-    }
-    if(skew == -2) {
-        if(a->left){
-            int l_skew = calculate_skew(a->left);
-            if(l_skew > 0) subtree_rotate_left(a->left);
-        }
-        return subtree_rotate_right(a);
-    }
-
-    return a;
-}
-
-Node* subtree_maintain(Node* a) {
-    while(a) {
-        a = subtree_rebalance(a);
-        a->height = calculate_height(a);
-        if(a->parent) {
-            a = a->parent;
-        } else {
-            break;
-        }
-    }
-    return a;
 }
 
 // helper functions

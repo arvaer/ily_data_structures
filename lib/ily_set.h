@@ -4,8 +4,8 @@
 
 #ifndef ILY_SET_MALLOC
 #include <stdlib.h>
-#define ILY_SET_MALLOC malloc 
-#endif                   
+#define ILY_SET_MALLOC malloc
+#endif
 
 #ifndef ILY_SET_ASSERT
 #include <assert.h>
@@ -28,10 +28,41 @@
     int gt(unsigned char* s1, unsigned char* s2);
     int geq(unsigned char* s1, unsigned char* s2);
     int eq(unsigned char* s1, unsigned char* s2);
-
 #define ILY_SET_COMPARE
 #endif // ILY_SET_COMPARE
 
+
+
+typedef struct Node {
+    unsigned char* data; //8
+    size_t height; //8
+    struct Node* parent;
+    struct Node* left;
+    struct Node* right;
+} Node;
+
+typedef struct Set{
+    Node* root;
+    size_t capacity;
+    size_t size;
+} Set;
+
+
+
+// Set API
+extern int initialize_set(Set* set);
+extern int free_set(Set* set);
+extern int insert(Set* set, const char* item);
+extern int remove_item(Set* set, const char* item);
+extern void dump_set(Set* set);
+extern int height(Set* set);
+extern const char* pop(Set* set);
+extern int filter(Set* in, Set* out, const char* pattern);
+extern Set* build(Set* set, Node** items);
+extern int disjoint_union(Set* out, Set* s1, Set* s2);
+extern int collapse(Set* out, Set** sets);
+
+#ifdef ILY_SET_IMPLEMENTATION
 
 #define SWAP_NODES(a, b) \
         Node temp; \
@@ -54,22 +85,10 @@
         a->right      = b->right; \
         b->right      = temp.right; \
 
-typedef struct Node {
-    unsigned char* data; //8
-    size_t height; //8
-    struct Node* parent; 
-    struct Node* left;   
-    struct Node* right; 
-} Node;
-
-
-typedef struct Set{
-    Node* root;
-    size_t capacity;
-    size_t size;
-} Set;
 
 // Node API
+
+
 int init_node(Node* node);
 Node* subtree_first(Node* root);
 Node* subtree_last(Node* root);
@@ -80,24 +99,6 @@ Node* predecessor(Node* root);
 int subtree_insert_after(Node* a, Node* b);
 int subtree_insert_before(Node* a, Node* b);
 int subtree_delete(Node* root);
-
-
-// Set API 
-int initialize_set(Set* set);
-int free_set(Set* set);
-int insert(Set* set, const char* item);
-int remove_item(Set* set, const char* item);
-void dump_set(Set* set);
-int height(Set* set);
-const char* pop(Set* set);
-int filter(Set* in, Set* out, const char* pattern);
-Set* build(Set* set, Node** items);
-int disjoint_union(Set* out, Set* s1, Set* s2);
-int collapse(Set* out, Set** sets);
-const char* min(Set* set);
-const char* max(Set* set);
-#endif // ILY_SET_H
-#ifndef ILY_SET_IMPLEMENTATION
 
 #define SUCCESS 1
 #define FAIL 0
@@ -113,7 +114,7 @@ int init_node(Node* node){
 
 Node* subtree_first(Node* root) {
     if(!root){
-        return NULL; 
+        return NULL;
     }
     while(root->left){
         root = root->left;
@@ -123,7 +124,7 @@ Node* subtree_first(Node* root) {
 
 Node* subtree_last(Node* root) {
     if(!root){
-        return NULL; 
+        return NULL;
     }
     while(root->right){
         root = root->right;
@@ -135,7 +136,7 @@ Node* successor(Node* node){
     if(!node){
         return NULL;
     }
-    if(node->right) return subtree_first(node->right); 
+    if(node->right) return subtree_first(node->right);
     while(node->parent && node->parent->right == node) node = node->parent;
     return node->parent;
 }
@@ -144,7 +145,7 @@ Node* predecessor(Node* node){
     if(!node){
         return NULL;
     }
-    if(node->left) return subtree_last(node->left); 
+    if(node->left) return subtree_last(node->left);
     while(node->parent && node->parent->left == node) node = node->parent;
     return node->parent;
 }
@@ -189,8 +190,8 @@ int subtree_delete(Node* root){
     if(!root) return FAIL;
     while(root){
         if(root->left || root->right){
-            Node* sub = {};
-            if(root->left) sub = predecessor(root); 
+            Node* sub;
+            if(root->left) sub = predecessor(root);
             else sub = successor(root);
             SWAP_NODES(root, sub);
             root = sub;
@@ -210,7 +211,6 @@ int subtree_delete(Node* root){
         return SUCCESS;
     }
     return FAIL;
-
 }
 
 // helper functions
@@ -252,7 +252,7 @@ unsigned char* decode_string (unsigned char* str){
     }
 
     return out;
-    
+
 
 }
 
@@ -320,5 +320,5 @@ int eq(unsigned char* us1, unsigned char* us2){
 
     return 0;
 }
-#define ILY_SET_IMPLEMENTATION
 #endif // ILY_SET_IMPLEMENTATION
+#endif // ILY_SET_H

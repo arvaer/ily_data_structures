@@ -1,3 +1,4 @@
+#define ILY_SET_IMPLEMENTATION
 #include "ily_set.h"
 #include <stdio.h>
 #include <stdalign.h>

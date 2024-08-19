@@ -98,6 +98,7 @@ Node* predecessor(Node* root);
 
 int subtree_insert_after(Node* a, Node* b);
 int subtree_insert_before(Node* a, Node* b);
+int subtree_insert(Node* a, Node* b);
 int subtree_delete(Node* root);
 
 #define SUCCESS 1
@@ -186,6 +187,32 @@ int subtree_insert_before(Node* a, Node* b) {
     return FAIL;
 }
 
+int subtree_insert(Node* a, Node* b){
+    if(!a || !b) return FAIL;
+    unsigned char* a_data = a->data;
+    unsigned char* b_data = b->data;
+    
+    if(!a_data || !b_data) return FAIL;
+
+    if(gt(a_data, b_data)) {
+        while(a->left){
+            a = a->left;
+     }
+        return subtree_insert_before(a, b);
+    }
+    else if(lt(a_data,b_data)) {
+        while(a->right){
+            a = a->right;
+        }
+        return subtree_insert_after(a, b);
+    }
+    else{
+        a->data = b->data;
+        return SUCCESS;
+    }
+    return FAIL;
+}
+
 int subtree_delete(Node* root){
     if(!root) return FAIL;
     while(root){
@@ -212,6 +239,9 @@ int subtree_delete(Node* root){
     }
     return FAIL;
 }
+
+
+
 
 // helper functions
 unsigned char* encode_string (unsigned char* str){

@@ -175,6 +175,41 @@ void test_subtree_delete(){
     assert(predecessor(&B) ==  NULL);
     assert(A.left == &B);
     assert(B.right == NULL);
+}
+
+void test_subtree_insert(){
+    unsigned char* a = (unsigned char*) "mid";
+    unsigned char* b = (unsigned char*) "left";
+    unsigned char* c = (unsigned char*) "right";
+    Node A = {};
+    Node B = {};
+    Node C = {};
+    A.data = a;
+    B.data = b;
+    C.data = c;
+    A.left = &B;
+    A.right = &C;
+    B.parent = &A;
+    C.parent = &A;
+
+    Node T1 = {};
+    unsigned char* t1 = (unsigned char*) "ava";
+    T1.data = t1;
+    Node T2 = {};
+    unsigned char* t2 = (unsigned char*) "zora";
+    T2.data = t2;
+
+    int result = subtree_insert(&A, &T1);
+    assert(result);
+    assert(A.left == &B);
+    assert(A.left->left == &T1);
+    assert(A.left->left->data == t1);
+
+    result = subtree_insert(&A, &T2);
+    assert(result);
+    assert(A.right == &C);
+    assert(A.right->right == &T2);
+    assert(A.right->right->data == t2);
 
 }
 
@@ -187,7 +222,8 @@ int main(){
    //test_subtree_predecessor();
    //test_subtree_insert_after();
    //test_subtree_insert_before();
-   test_subtree_delete();
+   //test_subtree_delete();
+   test_subtree_insert();
 
 
     return 0;
